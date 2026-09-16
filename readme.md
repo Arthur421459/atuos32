@@ -1,4 +1,4 @@
-# ATUOS Operating System
+# ATUOS 32 Operating System
 Hello! This is a random 32 bit operating system that im making.
 
 For build this OS you need 
