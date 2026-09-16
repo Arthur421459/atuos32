@@ -1,7 +1,7 @@
 #include "drivers/keyboard.h"
 #include "lib/buffer.h"
 #include "lib/string.h"
-#include "lib/io.h"
+#include "kernel/io.h"
 char kbd_normal[128] =
 {
     [0x01] = 27,

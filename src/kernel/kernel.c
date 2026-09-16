@@ -1,12 +1,13 @@
 #include "drivers/ata.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "kernel/bootinfo.h"
-#include "lib/io.h"
+#include "kernel/io.h"
 #include "drivers/keyboard.h"
-#include "lib/atufs.h"
+#include "kernel/atufs.h"
 #include "lib/string.h"
 #include "drivers/cmos.h"
-#include "lib/elf.h"
+#include "kernel/elf.h"
 #include "kernel/paging.h"
 #include "kernel/gdt.h"
 #include "kernel/apic.h"
@@ -56,6 +57,24 @@ void print_wposxy(const char* str, int color, int x, int y) {
     print_wpos(str, color, (80*y)+x);
 }
 
+void printchar(char c, int color) {
+    if (cursor >= 4000) {
+        cursor = 0;
+    }
+    tvideo[cursor++] = c;
+    tvideo[cursor++] = (char)color;
+    cursorc++;
+}
+void print(const char* str, int color) {
+    while (*str) {
+        
+        printchar(*str++, color);
+    }
+    set_cursor_pos(cursorc);
+}
+
+
+
 void clear() {
     for (short i = 0; i < 4000;i++) {
         if (i % 2) {
@@ -67,18 +86,20 @@ void clear() {
 }
 // idt
 
-volatile uint32_t tick = 0;
+volatile uint32_t sectick = 0;
+volatile uintptr_t tick = 0;
 volatile uint32_t systime = 0;
 volatile nixt worldtime = 0;
 volatile uint32_t irqcount[16];
 void irq_handler(uint32_t irqx) {
     switch (irqx) {
         case 0:
+            sectick++;
             tick++;
-            if (tick >= 100) {
+            if (sectick >= osfreq) {
                 systime++;
                 worldtime++;
-                tick = 0;
+                sectick = 0;
             }
             break;
         case 1:
@@ -107,12 +128,10 @@ void sleep(uint32_t sec) {
     }
 }
 
-void usleep(uint32_t usec) {
-    uint32_t ticks_to_wait = (usec + 9) / 10;
-    
-    uint32_t start_total_ticks = (systime * 100) + tick;
-    uint32_t target_total_ticks = start_total_ticks + ticks_to_wait;
-    while (((systime * 100) + tick) < target_total_ticks) {
+void msleep(uint32_t msec) {
+    uint32_t ticks_to_wait = (msec+(tickinms-1)) / tickinms;
+    uint32_t target_total_ticks = tick + ticks_to_wait;
+    while (tick < target_total_ticks) {
         asm volatile ("hlt");
     }
 }
@@ -145,8 +164,9 @@ struct load_program_result load_program(uint8_t* programptr) {
     struct load_program_result prog = {0};
     if (!is_compatible(programptr)) return prog;
     uint32_t pagedirpage = ppalloc(1);
-    uint32_t* pagediraddr = phys_to_virt(pagedirpage, 1, sysmisc_pagetble | page_present);
+    uint32_t* pagediraddr = phys_to_virt(pagedirpage, 1);
     add_page_essential(pagediraddr, pagedirpage);
+
     struct elf_header* elfh = (struct elf_header*)programptr;
     struct ph_entry* ph_entries = (struct ph_entry*)(programptr+elfh->pheader_ofs);
     for (int i = 0; i < elfh->entrynum_ph; i++) {
@@ -174,7 +194,7 @@ uint8_t* file0data;
 uintptr_t file0size;
 void kernel() {
     worldtime = convert_to_nixt(get_cmos_time());
-    tvideo = phys_to_virt(0xb8, 1, page_present | page_writable);
+    tvideo = phys_to_virt(0xb8, 1);
     clear();
 
     file0 = malloc(512, page_present | page_writable, page_present | page_writable);
@@ -246,7 +266,7 @@ struct syscall_result syscall_c(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32
         case 0x82:
             // ebx = microseconds
             asm volatile ("sti");
-            usleep(ebx);
+            msleep(ebx);
             asm volatile ("cli");
             break;
         case 10: {

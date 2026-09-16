@@ -1,6 +1,6 @@
 #ifndef BOOTINFO_H
 #define BOOTINFO_H
-#include "lib/main.h"
+#include <stdint.h>
 struct vbe_mode_info_structure {
 	uint16_t attributes;		// deprecated, only bit 7 should be of interest to you, and it indicates the mode supports a linear frame buffer.
 	uint8_t window_a;			// deprecated
@@ -45,12 +45,13 @@ struct smap {
     uint32_t high_length;
     uint32_t type;
 } __attribute((packed));
+
 struct boot_info {
     struct vbe_mode_info_structure* vbe_info;
     uint8_t* partaddr;
     uint8_t drive;
     struct smap* smaps;
     uint16_t total_smaps;
-
+	uint8_t* rdsp_table;
 } __attribute__((packed));
 #endif

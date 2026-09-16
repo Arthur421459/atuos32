@@ -1,6 +1,8 @@
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "atuos/time.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "lib/io.h"
 #include "atuos/core.h"
 #include "atuos/file.h"

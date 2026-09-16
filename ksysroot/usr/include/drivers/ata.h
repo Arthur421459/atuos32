@@ -1,6 +1,7 @@
 #ifndef ATA_H
 #define ATA_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 void read_sector(uint32_t lba, uint16_t* buffer, uint8_t sectors);
 void write_sector(uint32_t lba, uint16_t* buffer, uint8_t sectors);
 

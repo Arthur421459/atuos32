@@ -1,7 +1,10 @@
 #ifndef HEAP_H
 #define HEAP_H
-#include "lib/main.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "kernel/bootinfo.h"
+#include "lib/tuple.h"
 extern uint32_t uraminbytes;
 extern uint32_t traminbytes;
 extern uint32_t traminpages;

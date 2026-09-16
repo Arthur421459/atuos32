@@ -1,8 +1,17 @@
 #include "kernel/apic.h"
-#include "lib/io.h"
-// Only old PIC for now but in future, APIC! :D
+#include "kernel/msr.h"
+#include "kernel/cpuid.h"
+#include "kernel/paging.h"
+#include "kernel/io.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "lib/string.h"
+#include "kernel/kernel.h"
 
-void remap_pic(uint8_t master_ofs, uint8_t slave_ofs) {
+uintptr_t basepage_apic_phys;
+volatile uint32_t* lapic;
+
+void remap_oldpic(uint8_t master_ofs, uint8_t slave_ofs) {
     // Master = IRQ0 - IRQ7
     // Slave = IRQ8 - IRQ15
 
@@ -20,6 +29,28 @@ void remap_pic(uint8_t master_ofs, uint8_t slave_ofs) {
 
     outb(MasterPIC_data, 0); // desmascarar
     outb(SlavePIC_data, 0);
+}
+
+void disable_oldpic() {
+    // thanks 8259 PIC
+    // but you need to rest
+    outb(MasterPIC_data, 0xFF);
+    outb(SlavePIC_data, 0xFF);
+    // now, use APIC
+}
+
+bool has_apic() {
+    struct cpuid_result a = cpuid(1, 0);
+    return a.edx & CPUID_EDX_APIC;
+}
+void set_apic() {
+    if (!has_apic()) return;
+    uintptr_t apicbasemsr = rdmsr(IA32_APIC_BASE_MSR) | IA32_APIC_BASE_MSR_ENABLE;
+    wrmsr(IA32_APIC_BASE_MSR, apicbasemsr);
+
+    basepage_apic_phys = apicbasemsr >> 12;
+    lapic = phys_to_virt(basepage_apic_phys, 1); // Local APIC mapped :D
+
 }
 
 void set_pit_freq(uint32_t freq) {

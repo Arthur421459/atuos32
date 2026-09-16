@@ -1,9 +1,9 @@
-#include "lib/main.h"
+#include <stdint.h>
 #include "kernel/bootinfo.h"
-#include "lib/io.h"
+#include "kernel/io.h"
 #include "drivers/ata.h"
-#include "lib/atufs.h"
-#include "lib/elf.h"
+#include "kernel/atufs.h"
+#include "kernel/elf.h"
 #include "lib/string.h"
 volatile char* tvideo = (volatile char*) 0xB8000;
 uint8_t* kernel_buffer = (uint8_t*)0x500000;
@@ -63,6 +63,7 @@ struct vbe_mode_info_structure vbe_info;
 uint8_t drive = 0;
 uint8_t* partaddr;
 uint32_t total_smaps;
+
 struct boot_info* bootinfo = (struct boot_info*)0x5000;
 uint16_t readbufferf[256];
 struct file filebuffer1;
@@ -80,6 +81,43 @@ uintptr_t load_kernel(uint8_t* buffer) {
         memset((void*)(entry.p_paddr+entry.p_filesz), 0, entry.p_memsz - entry.p_filesz); // preencher o bss
     }
     return elfh->pentry_ofs; // return offset
+}
+
+#define rdsp_rmark 0x2052545020445352ULL
+void* locate_rdspin(uint64_t* addr, uintptr_t size) {
+    uintptr_t i = 0;
+    while (i < size) {
+        if (addr[i] == rdsp_rmark) {
+            uint8_t* baddr = (uint8_t*)(addr+i);
+            uint32_t length = 20;
+
+            if (baddr[15] >= 2) {
+                length = addr[i+5];
+            }
+            uint8_t checksum = 0;
+            for (uint32_t j = 0; j < length;j++) {
+                checksum += baddr[j];
+            }
+            if (checksum == 0) {
+                return baddr;
+            }
+        }
+        i += 2; // add 16 bytes
+    }
+    return (void*)0;
+}
+
+uintptr_t edba_addr;
+uint8_t* locate_rdsp() {
+    uint8_t* result = 0;
+    edba_addr = (uintptr_t)(*(uint16_t*)0x40e << 4);
+    void* addr = (void*)edba_addr;
+    result = locate_rdspin(addr, 128);
+    if (result == (void*)0) {
+        addr = (void*)0xE0000;
+        result = locate_rdspin(addr, 0x4000);
+    }
+    return result;
 }
 uintptr_t boot2main() {
     set_partstart(partaddr);
@@ -106,6 +144,8 @@ uintptr_t boot2main() {
     bootinfo->vbe_info = &vbe_info;
     bootinfo->smaps = (struct smap*)0x500;
     bootinfo->total_smaps = total_smaps;
+    bootinfo->rdsp_table = locate_rdsp();
+
     if (!kernel_offset) {
         print("kernel.elf not founded!", 0x07);
         asm volatile ("hlt" :: "S"(readbuffer1));

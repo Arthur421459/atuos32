@@ -17,6 +17,8 @@ extern binfo
 extern syscall_enter
 extern syscall_int
 
+global has_cpuid
+
 global int0
 global int1
 global int2
@@ -53,18 +55,38 @@ global syscallenter
 global set_pag
 global errlabel
 global jmp_prog
-extern retstart   
+extern retstart
+
+has_cpuid:
+    pushfd
+    pop eax ; get flags
+    
+    mov ecx, eax ; backup old flag
+    xor eax, 0x200000 ; change cpuid flag
+
+
+    push eax
+    popfd ; write flags
+
+    pushfd
+    pop eax ; get new flags
+
+    xor eax, ecx ; test changes
+    and eax, 0x200000 ; get only the important bit
+    ; eax is the result, if worked, eax != 0, else eax == 0
+ret
+
 set_pag:
     mov eax, [esp+4]
     mov cr3, eax
 ret
-
 jmp_prog:
     cli
     mov ebx, [esp+4]
     mov ecx, [esp+8]
     mov eax, [esp+12]
     mov cr3, eax
+
     ; set data seg
     mov ax, 0x23 ; userdata seg | rpl = 3
     mov ds, ax
@@ -85,9 +107,17 @@ jmp_prog:
     xor eax, eax
     mov ebx, eax
     mov ecx, eax
+iretd
 
-    iretd
-
+enable_sse:
+    mov eax, cr0
+    and ax, 0xFFFB
+    or ax, 0x2
+    mov cr0, eax
+    mov eax, cr4
+    or ax, 3 << 9
+    mov cr4, eax
+ret
 ; interrupts
 int0:
     push dword 0
@@ -130,6 +160,8 @@ int7:
     jmp int_common
 
 int8:
+    pop eax
+    mov ebx, 0xABCDEF
     cli
     hlt
 
@@ -214,6 +246,7 @@ int_common:
     add esp, 8
 iretd
 
+    
 irq0:
     push dword 0
     jmp irq_common

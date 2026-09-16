@@ -1,6 +1,8 @@
 #ifndef ELF_H
 #define ELF_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "lib/tuple.h"
 struct elf_header {
     uint8_t magic;
     uint8_t elf_ascii[3];

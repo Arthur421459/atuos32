@@ -1,6 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 extern void set_idt(uint32_t itr);
 struct idt_entry {
     uint16_t low_offset;

@@ -1,6 +1,7 @@
 
-#include "lib/elf.h"
-#include "lib/main.h"
+#include "kernel/elf.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "lib/string.h"
 bool is_elf(uint8_t* buffer) {
     struct elf_header* elfh = (struct elf_header*)buffer;

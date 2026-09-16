@@ -5,6 +5,7 @@ extern vbe_info
 extern partaddr
 extern partstart
 extern total_smaps
+
 global _start
 _start:
     mov ax, cs
@@ -58,7 +59,6 @@ getram:
         mov [total_smaps], si
         popa
         ret
-
 gdt:
     dq 0 ; null entry
 .code_seg:
@@ -81,6 +81,7 @@ gdt_desc:
     dw gdt_end - gdt - 1
     dd gdt
 [bits 32]
+
 start32:
     mov ax, 0x10
     mov ds, ax
@@ -89,7 +90,9 @@ start32:
     mov gs, ax
     mov ss, ax
     mov esp, 0x90000
+
     call boot2main
+
     mov esi, 0x5000
     xor edx, edx
     mov dl, byte [drive]

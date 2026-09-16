@@ -1,7 +1,9 @@
 #ifndef BITMAP_H
 #define BITMAP_H
-#include "lib/main.h"
-
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include "lib/tuple.h"
 void mark_true(void* bitmaptr, uint32_t first, uint32_t size);
 void mark_false(void* bitmaptr, uint32_t first, uint32_t size);
 

@@ -1,6 +1,7 @@
 #ifndef ATUFS_H
 #define ATUFS_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "drivers/cmos.h"
 struct atufs_info {
     uint16_t jmpormagic;

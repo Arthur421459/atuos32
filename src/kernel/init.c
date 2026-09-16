@@ -1,8 +1,7 @@
-#include "kernel/cpuid.h"
-#include "kernel/heap.h"
-#include "kernel/msr.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "kernel/bootinfo.h"
+#include "lib/string.h"
 #define no_cache           (1 << 4)
 #define pwt_enable         (1 << 3)
 #define user_page          (1 << 2)
@@ -49,14 +48,14 @@ uint32_t heap_sizebits;
 uint8_t* heap_start;
 uint32_t kernel_size;
 uint32_t kernel_sizepg;
-struct boot_info* binfo;
+struct boot_info binfo;
 extern char stack_topld[];
 uint32_t stack_top;
 void calculateram() {
-    for (int i = 0; i < binfo->total_smaps;i++) {
-        traminbytes += binfo->smaps[i].length;
-        if (binfo->smaps[i].type == 1) {
-            uraminbytes += binfo->smaps[i].length;
+    for (int i = 0; i < binfo.total_smaps;i++) {
+        traminbytes += binfo.smaps[i].length;
+        if (binfo.smaps[i].type == 1) {
+            uraminbytes += binfo.smaps[i].length;
         }
     }
 }
@@ -92,10 +91,9 @@ void config_paging() {
     asm volatile ("movl %0, %%cr3" :: "r"(pagedir_phys) : "memory");
     // secure paging!
 }
-uintptr_t binfoaddr;
+
 void afterkinit(void* bbinfo) {
-    binfoaddr = (uintptr_t)bbinfo;
-    binfo = (struct boot_info*)bbinfo;
+    memcpy(&binfo, bbinfo, sizeof(struct boot_info)); // make a copy (IS NEEDED)
     calculateram();
     init_heap_pt1();
     config_paging();
@@ -108,15 +106,20 @@ void afterkinit(void* bbinfo) {
 #include "kernel/gdt.h"
 #include "kernel/idt.h"
 #include "kernel/apic.h"
-#include "lib/atufs.h"
+#include "kernel/atufs.h"
 #include "kernel/paging.h"
-struct boot_info* vbinfo;
+#include "kernel/cpuid.h"
+#include "kernel/heap.h"
+#include "kernel/msr.h"
+#include "kernel/tsc.h"
 extern void syscallenter();
+extern bool has_cpuid();
 extern uintptr_t syscall_support;
+
 void set_sysenter() {
     // detect sysenter
     struct cpuid_result a = cpuid(1, 0);
-    if (!(a.edx & CPUID_FEATURE_SYSENTER)) return; // no sysenter :(
+    if (!(a.edx & CPUID_EDX_SYSENTER)) return; // no sysenter :(
 
     // sysenter :D
     wrmsr(IA32_SYSENTER_CS, kernelcode_seg);
@@ -124,29 +127,36 @@ void set_sysenter() {
     wrmsr(IA32_SYSENTER_ESP, stack_top);
     syscall_support = 1;
 }
+
 void msr_init() {
     set_sysenter();
+    set_apic();
 }
-void afterpaging() {
-    config_gdt();
-    vbinfo = phys_to_virt(binfoaddr >> 12, 1, page_present | page_writable);
-    vbinfo = (void*)((uintptr_t)vbinfo+(binfoaddr & 4095));
-
-    uint8_t* ptr1 = phys_to_virt((uintptr_t)vbinfo->partaddr >> 12, 1, page_present | page_writable); // isso muda heap_size não sei por que
-    set_partstart(ptr1+((uintptr_t)vbinfo->partaddr & 4095));
-    free_directmap(ptr1, 1);
-
-    remap_pic(0x20, 0x28);
-    config_idt();
-    set_pit_freq(100);
-    
-    uintptr_t physsmaps = (uintptr_t)vbinfo->smaps;
-    ptr1 = phys_to_virt(physsmaps >> 12, (vbinfo->total_smaps + 99) / 100, page_present | page_writable);
-    init_heap((struct smap*)(ptr1+(physsmaps & 4095)), vbinfo->total_smaps);
-    free_directmap(ptr1, (vbinfo->total_smaps + 99) / 100);
-
-    init_atufs();
+void cpuid_init() {
     if (has_msr()) {
         msr_init();
     }
+}
+uint64_t lapic_freq_hz;
+
+void afterpaging() {
+    config_gdt();
+
+    remap_oldpic(0x20, 0x28);
+    config_idt();
+    set_pit_freq(osfreq);
+    calibrate_tsc();
+
+    uint8_t* ptr1 = phys_to_virt((uintptr_t)binfo.partaddr >> 12, 1); // isso muda heap_size não sei por que
+    set_partstart(ptr1+((uintptr_t)binfo.partaddr & 4095));
+    free_directmap(ptr1, 1);
+
+    uintptr_t physsmaps = (uintptr_t)binfo.smaps;
+    ptr1 = phys_to_virt(physsmaps >> 12, (binfo.total_smaps + 99) / 100);
+    init_heap((struct smap*)(ptr1+(physsmaps & 4095)), binfo.total_smaps);
+    free_directmap(ptr1, (binfo.total_smaps + 99) / 100);
+    if (has_cpuid()) {
+        cpuid_init();
+    }
+    init_atufs();
 }

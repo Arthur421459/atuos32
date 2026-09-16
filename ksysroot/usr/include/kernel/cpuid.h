@@ -1,9 +1,11 @@
 #ifndef CPUID_H
 #define CPUID_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 // edx
-#define CPUID_FEATURE_MSR (1 << 5)
-#define CPUID_FEATURE_SYSENTER (1 << 11)
+#define CPUID_EDX_MSR (1 << 5)
+#define CPUID_EDX_SYSENTER (1 << 11)
+#define CPUID_EDX_APIC (1 << 9)
 struct cpuid_result {
     uint32_t eax;
     uint32_t ebx;

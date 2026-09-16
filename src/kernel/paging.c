@@ -1,6 +1,7 @@
 #include "kernel/paging.h"
 #include "lib/bitmap.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "lib/string.h"
 extern uintptr_t ppalloc(uint32_t pages);
 extern tuple we_palloc(uint32_t pages);
@@ -17,7 +18,7 @@ extern tuple we_palloc(uint32_t pages);
 // 011 other system things
 // 100 user
 // 101 user alloc
-void *phys_to_virt(uint32_t physpage, uint32_t pages, uint16_t flags) {
+void *phys_to_virt(uint32_t physpage, uint32_t pages) {
     uint32_t* directmapentries = directmap;
     bool a = false;
     uintptr_t counter = 0;
@@ -38,7 +39,7 @@ void *phys_to_virt(uint32_t physpage, uint32_t pages, uint16_t flags) {
     if (counter < pages) return (void*)0;
     directmapentries += ofs;
     for (uintptr_t i = 0; i < pages;i++) {
-        directmapentries[i] = (physpage+i) << 12 | flags;
+        directmapentries[i] = (physpage+i) << 12 | page_present | page_writable | sysmisc_pagetble;
         invlpg((void*)(0xE0000000+((ofs+i) << 12)));
     }
 
@@ -84,7 +85,7 @@ void map_page(uint32_t* pdaddr, uint32_t physpage, uint32_t virtpage, uint32_t p
             }
             if (!(pdaddr[direntry] & 1)) {
                 uint32_t phystpg = ppalloc(1);
-                tble = phys_to_virt(phystpg, 1, page_writable | page_present | sysmisc_pagetble);
+                tble = phys_to_virt(phystpg, 1);
                 memset(tble, 0, 4096);
                 tble[tentry] = (physpage+alocated) << 12 | tflags;
                 alocated++;
@@ -95,7 +96,7 @@ void map_page(uint32_t* pdaddr, uint32_t physpage, uint32_t virtpage, uint32_t p
             if (((tflags & osattr_masktble) / 2) != (pdaddr[direntry] & osattr_maskdir) && (pdaddr[direntry] & osattr_maskdir) != multiple_pagedir) {
                 pdaddr[direntry] |= multiple_pagedir;
             }
-            tble = phys_to_virt(phystble >> 12, 1, page_writable | page_present | sysmisc_pagetble);
+            tble = phys_to_virt(phystble >> 12, 1);
             if (tble[tentry] & page_present) return;
             tble[tentry] = (physpage+alocated) << 12 | tflags;
             alocated++;
@@ -129,7 +130,7 @@ void unmap_page(uint32_t* pdaddr, uint32_t first, uint32_t pages) {
                 continue;
             }
             uint32_t phystble = pdaddr[direntry] & 0xFFFFF000;
-            tble = phys_to_virt(phystble >> 12, 1, page_present | sysmisc_pagetble | page_writable);
+            tble = phys_to_virt(phystble >> 12, 1);
             tble[tentry] = 0;
 
         } else {
@@ -150,7 +151,7 @@ uintptr_t vpalloc(uint32_t pages) {
     uintptr_t pg = 0;
     for (int i = 1; i < 1024; i++) {
         if ((pgdir[i] & full_pagedir) == 0 && pgdir[i] & page_present) {
-            tble = phys_to_virt(pgdir[i] >> 12, 1, page_present | page_writable);
+            tble = phys_to_virt(pgdir[i] >> 12, 1);
             for (int j = 0; j < 1024; j++) {
                 if (tble[j] & page_present) {
                     counter = 0;

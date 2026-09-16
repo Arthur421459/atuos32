@@ -1,6 +1,9 @@
 #ifndef PAGING_H
 #define PAGING_H
-#include "lib/main.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "lib/tuple.h"
 #define no_cache           (1 << 4)
 #define pwt_enable         (1 << 3)
 #define user_page          (1 << 2)
@@ -37,7 +40,7 @@ struct malloc_header {
 #define physvirtdiff (0xC0000000 - 0x100000)
 #define pgmask 0xfffff000
 
-void *phys_to_virt(uint32_t physpage, uint32_t pages, uint16_t flags);
+void *phys_to_virt(uint32_t physpage, uint32_t pages);
 void free_directmap(void *ptr, uint32_t pages);
 
 uintptr_t get_pag();

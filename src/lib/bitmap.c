@@ -1,5 +1,6 @@
 #include "lib/bitmap.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 void mark_true(void *bitmaptr, uint32_t first, uint32_t size) {
     uint8_t* ptr = (uint8_t*)bitmaptr;
     for (uint32_t i = first; i < (first+size);i++) {

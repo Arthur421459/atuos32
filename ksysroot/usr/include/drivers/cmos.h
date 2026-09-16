@@ -1,6 +1,7 @@
 #ifndef CMOS_H
 #define CMOS_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 struct timestruct {
     uint8_t sec;
     uint8_t min;

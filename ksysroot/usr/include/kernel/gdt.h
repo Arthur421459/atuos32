@@ -1,6 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #define kernelcode_seg 0x08
 #define kerneldata_seg 0x10
 

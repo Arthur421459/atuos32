@@ -6,6 +6,8 @@ SYSROOTDIR = sysroot
 SYSROOT_INC = $(SYSROOTDIR)/usr/include
 SYSROOT_LIB = $(SYSROOTDIR)/usr/lib
 
+KSYSROOT = ksysroot
+
 BUILD_DIR = build
 TOOLS_DIR = tools
 
@@ -40,7 +42,8 @@ SYSTEM_CFLAGS = -m32 \
                 -mno-sse2 \
                 -mno-mmx \
                 -Wextra \
-                -Iinclude \
+				--sysroot=$(KSYSROOT) \
+                -I$(KSYSROOT)/usr/include \
                 -fno-stack-protector \
                 -fno-pic \
                 -fno-pie \

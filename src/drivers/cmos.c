@@ -1,6 +1,7 @@
 #include "drivers/cmos.h"
-#include "lib/main.h"
-#include "lib/io.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "kernel/io.h"
 uint8_t monthdays[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
 uint8_t statusregb = 0;
 

@@ -1,11 +1,18 @@
 #ifndef MSR_H
 #define MSR_H
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "kernel/cpuid.h"
 // msr
+#define IA32_APIC_BASE_MSR 0x1B
+#define IA32_APIC_BASE_MSR_BSP 0x100 // Processor is a BSP
+#define IA32_APIC_BASE_MSR_ENABLE 0x800
+
+
 #define IA32_SYSENTER_CS  0x174
 #define IA32_SYSENTER_ESP 0x175
 #define IA32_SYSENTER_EIP 0x176
+
 static inline uint64_t rdmsr(uint32_t msr)
 {
     uint32_t lo;
@@ -34,6 +41,6 @@ static inline void wrmsr(uint32_t msr, uint64_t value)
 }
 static inline bool has_msr() {
     struct cpuid_result r = cpuid(1, 0);
-    return (r.edx & CPUID_FEATURE_MSR) != 0;
+    return (r.edx & CPUID_EDX_MSR) != 0;
 }
 #endif

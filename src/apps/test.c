@@ -4,6 +4,7 @@
 char a[] = "Test.......";
 char b[] = "-";
 char c[] = "|";
+
 void main() {
     print_wpos(a, 0);
     bool a = false;
@@ -14,6 +15,6 @@ void main() {
             print_wpos(c, 80);
         }
         a = !a;
-        usleep(500);
+        msleep(500);
     }
 }

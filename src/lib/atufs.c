@@ -1,9 +1,10 @@
-#include "lib/atufs.h"
+#include "kernel/atufs.h"
 #include "drivers/ata.h"
 #include "drivers/cmos.h"
 #include "kernel/paging.h"
 #include "lib/string.h"
-#include "lib/main.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "kernel/heap.h"
 struct atufs_info atufsinfo;
 uint16_t blockinsec = 1;
