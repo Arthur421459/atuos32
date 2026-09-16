@@ -1,8 +1,6 @@
 # ATUOS Operating System
 Hello! This is a random 32 bit operating system that im making.
 
-I'm using uACPI to the ACPI part :D
-
 For build this OS you need 
 
 i686-elf-gcc i686-elf-ld i686-elf-ar make nasm
