@@ -1,5 +1,6 @@
 #include "kernel/gdt.h"
 #include "lib/string.h"
+
 extern uintptr_t stack_top;
 struct gdt_entry gdt[6] __attribute__((aligned(16)));
 struct gdt_ptr gp __attribute__((aligned(16)));
@@ -16,7 +17,6 @@ void gdt_set_entry(int seg, uint32_t base, uint32_t limit, uint8_t access, uint8
     gdt[seg].granularity |= gran & 0xF0; // 0xf0 = 111100000
     gdt[seg].access = access;
 }
-
 
 void config_gdt() {
     // set tss

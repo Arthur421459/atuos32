@@ -42,7 +42,7 @@ SYSTEM_CFLAGS = -m32 \
                 -mno-sse2 \
                 -mno-mmx \
                 -Wextra \
-				--sysroot=$(KSYSROOT) \
+		--sysroot=$(KSYSROOT) \
                 -I$(KSYSROOT)/usr/include \
                 -fno-stack-protector \
                 -fno-pic \

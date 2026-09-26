@@ -65,7 +65,7 @@ extern afterpaging
 global set_tss
 global set_gdt
 global set_idt
-extern stack_topld
+extern stack_top
 %define offsetk (0xC0000000 - 0x100000)
 extern kernel
 initdone:
@@ -74,7 +74,7 @@ initdone:
     mov esp, eax ; set stack to higher half
 
     call afterkinit ; let c configure everything :)
-    mov esp, stack_topld ; finally kernel stack!
+    mov esp, [stack_top] ; finally kernel stack!
     call afterpaging
     call kernel
     .hlt:

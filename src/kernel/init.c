@@ -147,7 +147,7 @@ void afterpaging() {
     set_pit_freq(osfreq);
     calibrate_tsc();
 
-    uint8_t* ptr1 = phys_to_virt((uintptr_t)binfo.partaddr >> 12, 1); // isso muda heap_size não sei por que
+    uint8_t* ptr1 = phys_to_virt((uintptr_t)binfo.partaddr >> 12, 1);
     set_partstart(ptr1+((uintptr_t)binfo.partaddr & 4095));
     free_directmap(ptr1, 1);
 
